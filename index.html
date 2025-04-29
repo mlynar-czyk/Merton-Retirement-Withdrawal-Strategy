@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merton Retirement Strategy with Stochastic Modeling</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+            line-height: 1.6;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .card {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .form-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .form-section {
+                grid-template-columns: 1fr;
+            }
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .results-section {
+            margin-top: 20px;
+        }
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .result-row:last-child {
+            border-bottom: none;
+        }
+        .result-label {
+            font-weight: 600;
+        }
+        .result-value {
+            font-family: monospace;
+            font-size: 16px;
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 20px 0;
+        }
+        .nav-tabs {
+            display: flex;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            border-bottom: 1px solid #ddd;
+        }
+        .nav-tabs li {
+            padding: 10px 15px;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+        .nav-tabs li.active {
+            border: 1px solid #ddd;
+            border-bottom-color: white;
+            border-radius: 4px 4px 0 0;
+            margin-bottom: -1px;
+            font-weight: bold;
+        }
+        .tab-content {
+            padding: 20px 0;
+        }
+        .tab-pane {
+            display: none;
+        }
+        .tab-pane.active {
+            display: block;
+        }
+        .info-box {
+            background-color: #ebf5fb;
+            border-left: 4px solid #3498db;
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .chart-info {
+            background-color: #f8f9fa;
+            padding: 10px;
+            margin: 0 0 15px 0;
+            border-radius: 4px;
+            border-left: 4px solid #dc3545;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: right;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: 600;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .explanation {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .bold-result {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        code {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #f5f5f5;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1 class="text-center">Merton Retirement Withdrawal Strategy</h1>
+            <p>This tool implements Robert Merton's retirement withdrawal strategy using stochastic modeling of asset returns (geometric Brownian motion). It separates essential and discretionary spending and provides a dynamic withdrawal strategy that adapts to market conditions.</p>
+        </div>
+
+        <div class="card">
+            <h2>Theory Behind Merton's Retirement Withdrawal Strategy</h2>
+
+            <div class="explanation">
+                <h3>Stochastic Modeling of Asset Returns</h3>
+                <p>The implementation uses <strong>geometric Brownian motion</strong> to model asset returns, which is the same mathematical framework used by Robert Merton in his groundbreaking work on option pricing and portfolio theory.</p>
+                
+                <h3>Key Components of the Model</h3>
+                <ul>
+                    <li><strong>Geometric Brownian Motion (GBM)</strong>: Models stock prices as following a log-normal distribution, capturing both drift (expected return) and volatility.</li>
+                    <li><strong>Present Value Annuity Factor (PVAF)</strong>: Used to calculate the appropriate withdrawal rate based on portfolio value, expected returns, and remaining time horizon.</li>
+                    <li><strong>Essential vs. Discretionary Spending</strong>: Separates necessary expenses from flexible spending, ensuring basic needs are met first.</li>
+                    <li><strong>Guardrails</strong>: Limits on how much withdrawals can change each year to provide income stability.</li>
+                    <li><strong>Portfolio Construction</strong>: Models combined stock/bond portfolio with correlation effects on overall risk and return.</li>
+                </ul>
+
+                <h3>Mathematical Background</h3>
+                <p>The stochastic differential equation (SDE) for geometric Brownian motion is:</p>
+                <p><em>dS = μS dt + σS dW</em></p>
+                <p>Where:</p>
+                <ul>
+                    <li><em>S</em> is the asset price</li>
+                    <li><em>μ</em> is the drift (expected return)</li>
+                    <li><em>σ</em> is the volatility</li>
+                    <li><em>dW</em> is a Wiener process (Brownian motion)</li>
+                </ul>
+                
+                <p>The solution to this SDE gives the price at time t as:</p>
+                <p><em>S(t) = S(0) * exp((μ - σ²/2)t + σW(t))</em></p>
+                
+                <p>This produces more realistic market simulations than simple deterministic models, accounting for the actual statistical properties of market returns.</p>
+            </div>
+
+            <h3>Advantages Over Traditional Withdrawal Methods</h3>
+
+            <div class="explanation">
+                <p>Compared to traditional approaches like the 4% rule, Merton's approach offers several benefits:</p>
+                
+                <ol>
+                    <li><strong>Adapts to market conditions</strong>: Recalculates annually based on actual portfolio performance rather than assuming constant returns.</li>
+                    <li><strong>Risk-aware</strong>: Explicitly models market volatility and correlation between asset classes.</li>
+                    <li><strong>Prioritizes essential spending</strong>: Ensures basic needs are covered before allocating to discretionary expenses.</li>
+                    <li><strong>Time-horizon optimization</strong>: Adjusts withdrawals based on remaining life expectancy rather than using a fixed rate.</li>
+                    <li><strong>Realistic market modeling</strong>: Uses stochastic processes that better represent actual market behavior.</li>
+                </ol>
+                
+                <p>The implementation shown here combines theoretical rigor with practical considerations like withdrawal stability guardrails to create a robust retirement income strategy.</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Inputs</h2>
+            <div class="form-section">
+                <div>
+                    <div class="form-group">
+                        <label for="age">Current Age</label>
+                        <input type="number" id="age" value="65" min="50" max="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="life_expectancy">Life Expectancy</label>
+                        <input type="number" id="life_expectancy" value="90" min="70" max="120">
+                    </div>
+                    <div class="form-group">
+                        <label for="portfolio_value">Current Portfolio Value ($)</label>
+                        <input type="number" id="portfolio_value" value="1000000" min="100000" step="10000">
+                    </div>
+                    <div class="form-group">
+                        <label for="essential_income">Monthly Essential Income Needed ($)</label>
+                        <input type="number" id="essential_income" value="3000" min="0" step="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="guaranteed_income">Monthly Guaranteed Income (SS, Pension) ($)</label>
+                        <input type="number" id="guaranteed_income" value="2000" min="0" step="100">
+                    </div>
+                </div>
+                <div>
+                    <div class="form-group">
+                        <label for="stock_allocation">Stock Allocation (%)</label>
+                        <input type="number" id="stock_allocation" value="60" min="0" max="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="bond_allocation">Bond Allocation (%)</label>
+                        <input type="number" id="bond_allocation" value="40" min="0" max="100" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label for="stock_return">Expected Stock Return (% annual)</label>
+                        <input type="number" id="stock_return" value="7" min="-10" max="20" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label for="stock_volatility">Stock Volatility (% annual)</label>
+                        <input type="number" id="stock_volatility" value="16" min="5" max="40" step="0.5">
+                    </div>
+                    <div class="form-group">
+                        <label for="bond_return">Expected Bond Return (% annual)</label>
+                        <input type="number" id="bond_return" value="3" min="-5" max="15" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label for="bond_volatility">Bond Volatility (% annual)</label>
+                        <input type="number" id="bond_volatility" value="5" min="1" max="20" step="0.5">
+                    </div>
+                    <div class="form-group">
+                        <label for="correlation">Stock-Bond Correlation</label>
+                        <input type="number" id="correlation" value="0.2" min="-1" max="1" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label for="inflation">Expected Inflation Rate (% annual)</label>
+                        <input type="number" id="inflation" value="2.5" min="0" max="10" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label for="max_change">Max Annual Withdrawal Change (%)</label>
+                        <input type="number" id="max_change" value="15" min="0" max="50" step="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="simulations">Number of Simulations</label>
+                        <input type="number" id="simulations" value="1000" min="100" max="10000" step="100">
+                    </div>
+                </div>
+            </div>
+            <button id="run_simulation">Run Simulation</button>
+        </div>
+
+        <div class="card results-section" id="results_card" style="display:none;">
+            <h2>Results</h2>
+            <div class="info-box">
+                <p>The results below show the outcomes of <span id="sim_count"></span> simulations of retirement scenarios based on Merton's strategy. Each simulation represents a possible market path using stochastic modeling (geometric Brownian motion).</p>
+                <p><strong>Success Rate</strong> shows the percentage of simulations where your essential income needs remained fully covered throughout your entire retirement period. This aligns with the primary goal of Merton's strategy: maintaining essential living standards regardless of market fluctuations.</p>
+            </div>
+
+            <ul class="nav-tabs">
+                <li class="active" data-tab="summary">Summary</li>
+                <li data-tab="charts">Charts</li>
+                <li data-tab="details">Detailed Results</li>
+                <li data-tab="code">Implementation</li>
+            </ul>
+
+            <div class="tab-content">
+                <div class="tab-pane active" id="summary">
+                    <h3>Summary Results</h3>
+                    <div class="result-row">
+                        <div class="result-label">Initial Annual Withdrawal</div>
+                        <div class="result-value" id="initial_withdrawal">$0</div>
+                    </div>
+                    <div class="result-row">
+                        <div class="result-label">Initial Monthly Withdrawal</div>
+                        <div class="result-value" id="initial_monthly">$0</div>
+                    </div>
+                    <div class="result-row">
+                        <div class="result-label">Initial Monthly Discretionary</div>
+                        <div class="result-value" id="initial_discretionary">$0</div>
+                    </div>
+                    <div class="result-row">
+                        <div class="result-label">Annual Essential Income Gap</div>
+                        <div class="result-value" id="essential_gap">$0</div>
+                    </div>
+                    <div class="result-row">
+                        <div class="result-label">Success Rate (Essential Needs Coverage)</div>
+                        <div class="result-value" id="success_rate">0%</div>
+                    </div>
+                    <div class="result-row">
+                        <div class="result-label">Median Portfolio at End</div>
+                        <div class="result-value" id="median_end">$0</div>
+                    </div>
+                    <div class="result-row">
+                        <div class="result-label">10th Percentile Portfolio at End</div>
+                        <div class="result-value" id="percentile_10">$0</div>
+                    </div>
+                    <div class="result-row">
+                        <div class="result-label">Median Annual Withdrawal (Year 10)</div>
+                        <div class="result-value" id="median_withdrawal_10">$0</div>
+                    </div>
+                    <div class="result-row">
+                        <div class="result-label">Median Annual Withdrawal (Year 20)</div>
+                        <div class="result-value" id="median_withdrawal_20">$0</div>
+                    </div>
+                </div>
+
+                <div class="tab-pane" id="charts">
+                    <h3>Simulation Charts</h3>
+                    <div class="chart-info">
+                        <p><strong>Success Threshold Line</strong>: The red horizontal line on the withdrawal chart represents the annual amount needed to fully cover your essential income needs (after accounting for guaranteed income). When a percentile line falls below this threshold, it indicates those scenarios would not meet all essential expenses at that point in retirement.</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="percentile_selector">Select Percentiles to Show</label>
+                        <select id="percentile_selector">
+                            <option value="10_90">10th to 90th percentile</option>
+                            <option value="25_75">25th to 75th percentile</option>
+                            <option value="5_95">5th to 95th percentile</option>
+                            <option value="1_99">1st to 99th percentile</option>
+                        </select>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="portfolio_chart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="withdrawal_chart"></canvas>
+                    </div>
+                </div>
+
+                <div class="tab-pane" id="details">
+                    <h3>Detailed Results</h3>
+                    <p>This table shows the median values across all simulations for each year:</p>
+                    <div style="overflow-x: auto;">
+                        <table id="detail_table">
+                            <thead>
+                                <tr>
+                                    <th>Year</th>
+                                    <th>Age</th>
+                                    <th>Portfolio Value</th>
+                                    <th>Annual Withdrawal</th>
+                                    <th>Monthly Withdrawal</th>
+                                    <th>Essential Coverage</th>
+                                </tr>
+                            </thead>
+                            <tbody id="detail_table_body">
+                                <!-- This will be filled by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane" id="code">
+                    <h3>JavaScript Implementation</h3>
+                    <p>This is the JavaScript code used to implement Merton's retirement withdrawal strategy with stochastic modeling:</p>
+                    <pre id="code_display">
+/**
+ * JavaScript implementation of the Merton Retirement Strategy
+ * using geometric Brownian motion for stochastic modeling
+ */
+
+class MertonStrategy {
+    constructor(params) {
+        // Store inputs
+        this.age = params.age;
+        this.life_expectancy = params.life_expectancy;
+        this.years = this.life_expectancy - this.age;
+        this.portfolio_value = params.portfolio_value;
+        this.essential_income = params.essential_income * 12;
+        this.guaranteed_income = params.guaranteed_income * 12;
+        this.income_gap = Math.max(0, this.essential_income - this.guaranteed_income);
+        
+        // Portfolio allocation
+        this.stock_allocation = params.stock_allocation / 100;
+        this.bond_allocation = params.bond_allocation / 100;
+        
+        // Market parameters
+        this.stock_return = params.stock_return / 100;
+        this.stock_volatility = params.stock_volatility / 100;
+        this.bond_return = params.bond_return / 100;
+        this.bond_volatility = params.bond_volatility / 100;
+        this.correlation = params.correlation;
+        this.inflation = params.inflation / 100;
+        
+        // Strategy parameters
+        this.max_change = params.max_change / 100;
+        this.num_simulations = params.simulations;
+        
+        // Calculate portfolio parameters
+        this.calcPortfolioParams();
+    }
+    
+    // Calculate the portfolio's expected return and volatility
+    calcPortfolioParams() {
+        // Expected return (arithmetic)
+        this.portfolio_return = (this.stock_allocation * this.stock_return + 
+                                this.bond_allocation * this.bond_return);
+        
+        // Portfolio volatility using correlation formula
+        this.portfolio_volatility = Math.sqrt(
+            this.stock_allocation**2 * this.stock_volatility**2 + 
+            this.bond_allocation**2 * this.bond_volatility**2 + 
+            2 * this.stock_allocation * this.bond_allocation * 
+            this.correlation * this.stock_volatility * this.bond_volatility
+        );
+        
+        // Real return (accounting for inflation)
+        this.real_return = (1 + this.portfolio_return) / (1 + this.inflation) - 1;
+        
+        // For GBM: adjust drift for volatility effect
+        this.geo_return = this.portfolio_return - 0.5 * this.portfolio_volatility**2;
+    }
+    
+    // Calculate Present Value Annuity Factor
+    calcPVAF(rate, years) {
+        if (rate === 0) {
+            return years;
+        }
+        return (1 - (1 / (1 + rate)**years)) / rate;
+    }
+    
+    // Calculate initial withdrawal using Merton's approach
+    initialWithdrawal() {
+        const pvaf = this.calcPVAF(this.real_return, this.years);
+        return this.portfolio_value / pvaf;
+    }
+    
+    // Run a single simulation of the retirement period
+    runSingleSimulation() {
+        const portfolio_values = [this.portfolio_value];
+        const withdrawals = [];
+        const monthly_withdrawals = [];
+        const essential_coverage = [];
+        
+        // Calculate initial withdrawal
+        const initial_withdrawal = this.initialWithdrawal();
+        let prev_withdrawal = initial_withdrawal;
+        
+        for (let year = 0; year < this.years; year++) {
+            // Calculate this year's withdrawal
+            let current_withdrawal;
+            if (year === 0) {
+                current_withdrawal = initial_withdrawal;
+            } else {
+                // Recalculate based on current portfolio and remaining years
+                const remaining_years = this.years - year;
+                const pvaf = this.calcPVAF(this.real_return, remaining_years);
+                const new_withdrawal = portfolio_values[portfolio_values.length - 1] / pvaf;
+                
+                // Apply guardrails to limit annual changes
+                const floor = prev_withdrawal * (1 - this.max_change);
+                const ceiling = prev_withdrawal * (1 + this.max_change);
+                current_withdrawal = Math.min(ceiling, Math.max(floor, new_withdrawal));
+            }
+            
+            // Store withdrawal info
+            withdrawals.push(current_withdrawal);
+            monthly_withdrawals.push(current_withdrawal / 12);
+            
+            // Calculate essential coverage - using guaranteed income first, then portfolio withdrawals
+            let coverage;
+            if (this.income_gap > 0) {
+                coverage = Math.min(current_withdrawal / this.income_gap, 1) * 100;
+            } else {
+                coverage = 100;
+            }
+            essential_coverage.push(coverage);
+            
+            // Simulate market returns using geometric Brownian motion
+            if (portfolio_values[portfolio_values.length - 1] <= current_withdrawal) {
+                // Portfolio depleted
+                portfolio_values.push(0);
+            } else {
+                // Random return with log-normal distribution (GBM)
+                const remaining = portfolio_values[portfolio_values.length - 1] - current_withdrawal;
+                
+                // Generate a standard normal random variable using Box-Muller transform
+                const u1 = Math.random();
+                const u2 = Math.random();
+                const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+                
+                // Apply to GBM formula
+                const random_return = Math.exp(this.geo_return + this.portfolio_volatility * z);
+                const new_value = remaining * random_return;
+                portfolio_values.push(Math.max(0, new_value));
+            }
+            
+            // Update for next iteration
+            prev_withdrawal = current_withdrawal;
+        }
+        
+        return {
+            portfolio_values: portfolio_values,
+            withdrawals: withdrawals,
+            monthly_withdrawals: monthly_withdrawals,
+            essential_coverage: essential_coverage,
+            initial_withdrawal: initial_withdrawal,
+            initial_monthly: initial_withdrawal / 12,
+            initial_discretionary: Math.max(0, (initial_withdrawal / 12) - Math.max(0, (this.essential_income - this.guaranteed_income)/12))
+        };
+    }
+    
+    // Run multiple simulations and process results
+    runAllSimulations() {
+        const all_results = [];
+        
+        // Run the specified number of simulations
+        for (let i = 0; i < this.num_simulations; i++) {
+            all_results.push(this.runSingleSimulation());
+        }
+        
+        // Extract initial values from first simulation
+        const initial_withdrawal = all_results[0].initial_withdrawal;
+        const initial_monthly = all_results[0].initial_monthly;
+        const initial_discretionary = all_results[0].initial_discretionary;
+        
+        // Extract data for analysis
+        const portfolio_values_by_year = [];
+        for (let year = 0; year < all_results[0].portfolio_values.length; year++) {
+            const year_values = all_results.map(result => result.portfolio_values[year]);
+            portfolio_values_by_year.push(year_values);
+        }
+        
+        const withdrawal_values_by_year = [];
+        for (let year = 0; year < all_results[0].withdrawals.length; year++) {
+            const year_values = all_results.map(result => result.withdrawals[year]);
+            withdrawal_values_by_year.push(year_values);
+        }
+        
+        // Calculate success rate as percentage of simulations where essential coverage 
+        // remained at 100% or above throughout retirement
+        const success_count = all_results.filter(result => {
+            // Check if essential coverage was maintained at 100% throughout retirement
+            return result.essential_coverage.every(coverage => coverage >= 100);
+        }).length;
+        const success_rate = (success_count / this.num_simulations) * 100;
+        
+        // Calculate percentiles for final portfolio value
+        const final_values = all_results.map(result => 
+            result.portfolio_values[result.portfolio_values.length - 1]
+        );
+        const median_end = this.percentile(final_values, 50);
+        const percentile_10 = this.percentile(final_values, 10);
+        
+        // Calculate median withdrawals at year 10 and 20
+        let median_withdrawal_10 = 0;
+        if (withdrawal_values_by_year.length > 9) {  // Year 10
+            median_withdrawal_10 = this.percentile(withdrawal_values_by_year[9], 50);
+        }
+        
+        let median_withdrawal_20 = 0;
+        if (withdrawal_values_by_year.length > 19) {  // Year 20
+            median_withdrawal_20 = this.percentile(withdrawal_values_by_year[19], 50);
+        }
+        
+        // Generate detailed table data
+        const detail_table = [];
+        for (let year = 0; year < all_results[0].withdrawals.length; year++) {
+            const age = this.age + year + 1;
+            const portfolio = this.percentile(all_results.map(result => result.portfolio_values[year+1]), 50);
+            const withdrawal = this.percentile(all_results.map(result => result.withdrawals[year]), 50);
+            const monthly = this.percentile(all_results.map(result => result.monthly_withdrawals[year]), 50);
+            const coverage = this.percentile(all_results.map(result => result.essential_coverage[year]), 50);
+            
+            detail_table.push({
+                year: year + 1,
+                age: age,
+                portfolio: portfolio,
+                withdrawal: withdrawal,
+                monthly: monthly,
+                coverage: coverage
+            });
+        }
+        
+        // Generate percentile data for charts
+        const percentile_data = {
+            years: [...Array(all_results[0].portfolio_values.length).keys()],
+            portfolio: {
+                p1: portfolio_values_by_year.map(values => this.percentile(values, 1)),
+                p5: portfolio_values_by_year.map(values => this.percentile(values, 5)),
+                p10: portfolio_values_by_year.map(values => this.percentile(values, 10)),
+                p25: portfolio_values_by_year.map(values => this.percentile(values, 25)),
+                p50: portfolio_values_by_year.map(values => this.percentile(values, 50)),
+                p75: portfolio_values_by_year.map(values => this.percentile(values, 75)),
+                p90: portfolio_values_by_year.map(values => this.percentile(values, 90)),
+                p95: portfolio_values_by_year.map(values => this.percentile(values, 95)),
+                p99: portfolio_values_by_year.map(values => this.percentile(values, 99))
+            },
+            withdrawal: {
+                p1: [0, ...withdrawal_values_by_year.map(values => this.percentile(values, 1))],
+                p5: [0, ...withdrawal_values_by_year.map(values => this.percentile(values, 5))],
+                p10: [0, ...withdrawal_values_by_year.map(values => this.percentile(values, 10))],
+                p25: [0, ...withdrawal_values_by_year.map(values => this.percentile(values, 25))],
+                p50: [0, ...withdrawal_values_by_year.map(values => this.percentile(values, 50))],
+                p75: [0, ...withdrawal_values_by_year.map(values => this.percentile(values, 75))],
+                p90: [0, ...withdrawal_values_by_year.map(values => this.percentile(values, 90))],
+                p95: [0, ...withdrawal_values_by_year.map(values => this.percentile(values, 95))],
+                p99: [0, ...withdrawal_values_by_year.map(values => this.percentile(values, 99))]
+            }
+        };
+        
+        return {
+            initial_withdrawal: initial_withdrawal,
+            initial_monthly: initial_monthly,
+            initial_discretionary: initial_discretionary,
+            income_gap: this.income_gap,
+            success_rate: success_rate,
+            median_end: median_end,
+            percentile_10: percentile_10,
+            median_withdrawal_10: median_withdrawal_10,
+            median_withdrawal_20: median_withdrawal_20,
+            detail_table: detail_table,
+            percentile_data: percentile_data
+        };
+    }
+    
+    // Helper method to calculate percentiles
+    percentile(values, p) {
+        // Make a copy and sort the values
+        const sorted = [...values].sort((a, b) => a - b);
+        const k = (sorted.length - 1) * p / 100;
+        const f = Math.floor(k);
+        const c = Math.ceil(k);
+        
+        // If k is an integer, return the corresponding value
+        if (f === c) {
+            return sorted[k];
+        }
+        
+        // Otherwise, interpolate between the two nearest values
+        const d0 = sorted[f] * (c - k);
+        const d1 = sorted[c] * (k - f);
+        return d0 + d1;
+    }
+}</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Utility functions
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2
+            }).format(value);
+        }
+
+        function formatPercentage(value) {
+            return `${value.toFixed(1)}%`;
+        }
+
+        /**
+         * JavaScript implementation of the Merton Retirement Strategy
+         * using geometric Brownian motion for stochastic modeling
+         */
+        class MertonStrategy {
+            constructor(params) {
+                // Store inputs
+                this.age = params.age;
+                this.life_expectancy = params.life_expectancy;
+                this.years = this.life_expectancy - this.age;
+                this.portfolio_value = params.portfolio_value;
+                this.essential_income = params.essential_income * 12;
+                this.guaranteed_income = params.guaranteed_income * 12;
+                this.income_gap = Math.max(0, this.essential_income - this.guaranteed_income);
+                
+                // Portfolio allocation
+                this.stock_allocation = params.stock_allocation / 100;
+                this.bond_allocation = params.bond_allocation / 100;
+                
+                // Market parameters
+                this.stock_return = params.stock_return / 100;
+                this.stock_volatility = params.stock_volatility / 100;
+                this.bond_return = params.bond_return / 100;
+                this.bond_volatility = params.bond_volatility / 100;
+                this.correlation = params.correlation;
+                this.inflation = params.inflation / 100;
+                
+                // Strategy parameters
+                this.max_change = params.max_change / 100;
+                this.num_simulations = params.simulations;
+                
+                // Calculate portfolio parameters
+                this.calcPortfolioParams();
+            }
+            
+            // Calculate the portfolio's expected return and volatility
+            calcPortfolioParams() {
+                // Expected return (arithmetic)
+                this.portfolio_return = (this.stock_allocation * this.stock_return + 
+                                        this.bond_allocation * this.bond_return);
+                
+                // Portfolio volatility using correlation formula
+                this.portfolio_volatility = Math.sqrt(
+                    this.stock_allocation**2 * this.stock_volatility**2 + 
+                    this.bond_allocation**2 * this.bond_volatility**2 + 
+                    2 * this.stock_allocation * this.bond_allocation * 
+                    this.correlation * this.stock_volatility * this.bond_volatility
+                );
+                
+                // Real return (accounting for inflation)
+                this.real_return = (1 + this.portfolio_return) / (1 + this.inflation) - 1;
+                
+                // For GBM: adjust drift for volatility effect
+                this.geo_return = this.portfolio_return - 0.5 * this.portfolio_volatility**2;
+            }
+            
+            // Calculate Present Value Annuity Factor
+            calcPVAF(rate, years) {
+                if (rate === 0) {
+                    return years;
+                }
+                return (1 - (1 / Math.pow(1 + rate, years))) / rate;
+            }
+            
+            // Calculate initial withdrawal using Merton's approach
+            initialWithdrawal() {
+                const pvaf = this.calcPVAF(this.real_return, this.years);
+                return this.portfolio_value / pvaf;
+            }
+            
+            // Run a single simulation of the retirement period
+            runSingleSimulation() {
+                const portfolio_values = [this.portfolio_value];
+                const withdrawals = [];
+                const monthly_withdrawals = [];
+                const essential_coverage = [];
+                
+                // Calculate initial withdrawal
+                const initial_withdrawal = this.initialWithdrawal();
+                let prev_withdrawal = initial_withdrawal;
+                
+                for (let year = 0; year < this.years; year++) {
+                    // Calculate this year's withdrawal
+                    let current_withdrawal;
+                    if (year === 0) {
+                        current_withdrawal = initial_withdrawal;
+                    } else {
+                        // Recalculate based on current portfolio and remaining years
+                        const remaining_years = this.years - year;
+                        const pvaf = this.calcPVAF(this.real_return, remaining_years);
+                        const new_withdrawal = portfolio_values[portfolio_values.length - 1] / pvaf;
+                        
+                        // Apply guardrails to limit annual changes
+                        const floor = prev_withdrawal * (1 - this.max_change);
+                        const ceiling = prev_withdrawal * (1 + this.max_change);
+                        current_withdrawal = Math.min(ceiling, Math.max(floor, new_withdrawal));
+                    }
+                    
+                    // Store withdrawal info
+                    withdrawals.push(current_withdrawal);
+                    monthly_withdrawals.push(current_withdrawal / 12);
+                    
+                    // Calculate essential coverage - using guaranteed income first, then portfolio withdrawals
+                    let coverage;
+                    if (this.income_gap > 0) {
+                        coverage = Math.min(current_withdrawal / this.income_gap, 1) * 100;
+                    } else {
+                        coverage = 100;
+                    }
+                    essential_coverage.push(coverage);
+                    
+                    // Simulate market returns using geometric Brownian motion
+                    if (portfolio_values[portfolio_values.length - 1] <= current_withdrawal) {
+                        // Portfolio depleted
+                        portfolio_values.push(0);
+                    } else {
+                        // Random return with log-normal distribution (GBM)
+                        const remaining = portfolio_values[portfolio_values.length - 1] - current_withdrawal;
+                        
+                        // Generate a standard normal random variable using Box-Muller transform
+                        const u1 = Math.random();
+                        const u2 = Math.random();
+                        const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+                        
+                        // Apply to GBM formula
+                        const random_return = Math.exp(this.geo_return + this.portfolio_volatility * z);
+                        const new_value = remaining * random_return;
+                        portfolio_values.push(Math.max(0, new_value));
+                    }
+                    
+                    // Update for next iteration
+                    prev_withdrawal = current_withdrawal;
+                }
+                
+                return {
+                    portfolio_values: portfolio_values,
+                    withdrawals: withdrawals,
+                    monthly_withdrawals: monthly_withdrawals,
+                    essential_coverage: essential_coverage,
+                    initial_withdrawal: initial_withdrawal,
+                    initial_monthly: initial_withdrawal / 12,
+                    initial_discretionary: Math.max(0, (initial_withdrawal / 12) - Math.max(0, (this.essential_income - this.guaranteed_income)/12))
+                };
+            }
+            
+            // Run multiple simulations and process results
+            runAllSimulations() {
+                const all_results = [];
+                
+                // Run the specified number of simulations
+                for (let i = 0; i < this.num_simulations; i++) {
+                    all_results.push(this.runSingleSimulation());
+                }
+                
+                // Extract initial values from first simulation
+                const initial_withdrawal = all_results[0].initial_withdrawal;
+                const initial_monthly = all_results[0].initial_monthly;
+                const initial_discretionary = all_results[0].initial_discretionary;
+                
+                // Extract data for analysis
+                const portfolio_values_by_year = [];
+                for (let year = 0; year < all_results[0].portfolio_values.length; year++) {
+                    const year_values = all_results.map(result => result.portfolio_values[year]);
+                    portfolio_values_by_year.push(year_values);
+                }
+                
+                const withdrawal_values_by_year = [];
+                for (let year = 0; year < all_results[0].withdrawals.length; year++) {
+                    const year_values = all_results.map(result => result.withdrawals[year]);
+                    withdrawal_values_by_year.push(year_values);
+                }
+                
+                // Calculate success rate as percentage of simulations where essential coverage 
+                // remained at 100% or above throughout retirement
+                const success_count = all_results.filter(result => {
+                    // Check if essential coverage was maintained at 100% throughout retirement
+                    return result.essential_coverage.every(coverage => coverage >= 100);
+                }).length;
+                const success_rate = (success_count / this.num_simulations) * 100;
+                
+                // Calculate percentiles for final portfolio value
+                const final_values = all_results.map(result => 
+                    result.portfolio_values[result.portfolio_values.length - 1]
+                );
+                const median_end = this.percentile(final_values, 50);
+                const percentile_10 = this.percentile(final_values, 10);
+                
+                // Calculate median withdrawals at year 10 and 20
+                let median_withdrawal_10 = 0;
+                if (withdrawal_values_by_year.length > 9) {  // Year 10
+                    median_withdrawal_10 = this.percentile(withdrawal_values_by_year[9], 50);
+                }
+                
+                let median_withdrawal_20 = 0;
+                if (withdrawal_values_by_year.length > 19) {  // Year 20
+                    median_withdrawal_20 = this.percentile(withdrawal_values_by_year[19], 50);
+                }
+                
+                // Generate detailed table data
+                const detail_table = [];
+                for (let year = 0; year < all_results[0].withdrawals.length; year++) {
+                    const age = this.age + year + 1;
+                    const portfolio = this.percentile(all_results.map(result => result.portfolio_values[year+1]), 50);
+                    const withdrawal = this.percentile(all_results.map(result => result.withdrawals[year]), 50);
+                    const monthly = this.percentile(all_results.map(result => result.monthly_withdrawals[year]), 50);
+                    const coverage = this.percentile(all_results.map(result => result.essential_coverage[year]), 50);
+                    
+                    detail_table.push({
+                        year: year + 1,
+                        age: age,
+                        portfolio: portfolio,
+                        withdrawal: withdrawal,
+                        monthly: monthly,
+                        coverage: coverage
+                    });
+                }
+                
+                // Generate percentile data for charts
+                const percentile_data = {
+                    years: [...Array(all_results[0].portfolio_values.length).keys()],
+                    portfolio: {
+                        p1: portfolio_values_by_year.map(values => this.percentile(values, 1)),
+                        p5: portfolio_values_by_year.map(values => this.percentile(values, 5)),
+                        p10: portfolio_values_by_year.map(values => this.percentile(values, 10)),
+                        p25: portfolio_values_by_year.map(values => this.percentile(values, 25)),
+                        p50: portfolio_values_by_year.map(values => this.percentile(values, 50)),
+                        p75: portfolio_values_by_year.map(values => this.percentile(values, 75)),
+                        p90: portfolio_values_by_year.map(values => this.percentile(values, 90)),
+                        p95: portfolio_values_by_year.map(values => this.percentile(values, 95)),
+                        p99: portfolio_values_by_year.map(values => this.percentile(values, 99))
+                    },
+                    withdrawal: {
+                        p1: [0, ...withdrawal_values_by_year.map(values => this.percentile(values, 1))],
+                        p5: [0, ...withdrawal_values_by_year.map(values => this.percentile(values, 5))],
+                        p10: [0, ...withdrawal_values_by_year.map(values => this.percentile(values, 10))],
+                        p25: [0, ...withdrawal_values_by_year.map(values => this.percentile(values, 25))],
+                        p50: [0, ...withdrawal_values_by_year.map(values => this.percentile(values, 50))],
+                        p75: [0, ...withdrawal_values_by_year.map(values => this.percentile(values, 75))],
+                        p90: [0, ...withdrawal_values_by_year.map(values => this.percentile(values, 90))],
+                        p95: [0, ...withdrawal_values_by_year.map(values => this.percentile(values, 95))],
+                        p99: [0, ...withdrawal_values_by_year.map(values => this.percentile(values, 99))]
+                    }
+                };
+                
+                return {
+                    initial_withdrawal: initial_withdrawal,
+                    initial_monthly: initial_monthly,
+                    initial_discretionary: initial_discretionary,
+                    income_gap: this.income_gap,
+                    success_rate: success_rate,
+                    median_end: median_end,
+                    percentile_10: percentile_10,
+                    median_withdrawal_10: median_withdrawal_10,
+                    median_withdrawal_20: median_withdrawal_20,
+                    detail_table: detail_table,
+                    percentile_data: percentile_data
+                };
+            }
+            
+            // Helper method to calculate percentiles
+            percentile(values, p) {
+                // Make a copy and sort the values
+                const sorted = [...values].sort((a, b) => a - b);
+                const k = (sorted.length - 1) * p / 100;
+                const f = Math.floor(k);
+                const c = Math.ceil(k);
+                
+                // If k is an integer, return the corresponding value
+                if (f === c) {
+                    return sorted[k];
+                }
+                
+                // Otherwise, interpolate between the two nearest values
+                const d0 = sorted[f] * (c - k);
+                const d1 = sorted[c] * (k - f);
+                return d0 + d1;
+            }
+        }
+
+        // Chart creation functions
+        function createPortfolioChart(percentile_data) {
+            const canvas = document.getElementById('portfolio_chart');
+            
+            // Destroy previous chart instance if it exists
+            if (window.portfolio_chart_instance) {
+                window.portfolio_chart_instance.destroy();
+            }
+            
+            // Create datasets based on percentile data
+            const datasets = [
+                {
+                    label: 'Median (50th percentile)',
+                    data: percentile_data.portfolio.p50,
+                    borderColor: 'rgb(54, 162, 235)',
+                    borderWidth: 2,
+                    fill: false
+                },
+                {
+                    label: '25th percentile',
+                    data: percentile_data.portfolio.p25,
+                    borderColor: 'rgba(54, 162, 235, 0.3)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                    borderWidth: 1,
+                    borderDash: [5, 5],
+                    fill: '+1',
+                    hidden: false
+                },
+                {
+                    label: '75th percentile',
+                    data: percentile_data.portfolio.p75,
+                    borderColor: 'rgba(54, 162, 235, 0.3)',
+                    borderWidth: 1,
+                    borderDash: [5, 5],
+                    fill: false,
+                    hidden: false
+                },
+                {
+                    label: '10th percentile',
+                    data: percentile_data.portfolio.p10,
+                    borderColor: 'rgba(54, 162, 235, 0.2)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.05)',
+                    borderWidth: 1,
+                    borderDash: [2, 2],
+                    fill: '+1',
+                    hidden: false
+                },
+                {
+                    label: '90th percentile',
+                    data: percentile_data.portfolio.p90,
+                    borderColor: 'rgba(54, 162, 235, 0.2)',
+                    borderWidth: 1,
+                    borderDash: [2, 2],
+                    fill: false,
+                    hidden: false
+                },
+                {
+                    label: '5th percentile',
+                    data: percentile_data.portfolio.p5,
+                    borderColor: 'rgba(54, 162, 235, 0.15)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.03)',
+                    borderWidth: 1,
+                    borderDash: [1, 1],
+                    fill: '+1',
+                    hidden: true
+                },
+                {
+                    label: '95th percentile',
+                    data: percentile_data.portfolio.p95,
+                    borderColor: 'rgba(54, 162, 235, 0.15)',
+                    borderWidth: 1,
+                    borderDash: [1, 1],
+                    fill: false,
+                    hidden: true
+                },
+                {
+                    label: '1st percentile',
+                    data: percentile_data.portfolio.p1,
+                    borderColor: 'rgba(54, 162, 235, 0.1)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.02)',
+                    borderWidth: 1,
+                    borderDash: [1, 2],
+                    fill: '+1',
+                    hidden: true
+                },
+                {
+                    label: '99th percentile',
+                    data: percentile_data.portfolio.p99,
+                    borderColor: 'rgba(54, 162, 235, 0.1)',
+                    borderWidth: 1,
+                    borderDash: [1, 2],
+                    fill: false,
+                    hidden: true
+                }
+            ];
+            
+            // Create new chart
+            window.portfolio_chart_instance = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: percentile_data.years,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Portfolio Value Projection',
+                            font: {
+                                size: 16
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += formatCurrency(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        intersect: true
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Year'
+                            }
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Portfolio Value ($)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return formatCurrency(value);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Update chart visibility based on current percentile selection
+            updatePercentileView();
+        }
+
+        function createWithdrawalChart(percentile_data, income_gap) {
+            const canvas = document.getElementById('withdrawal_chart');
+            
+            // Destroy previous chart instance if it exists
+            if (window.withdrawal_chart_instance) {
+                window.withdrawal_chart_instance.destroy();
+            }
+            
+            // Create datasets based on percentile data
+            const datasets = [
+                // First add the success threshold line
+                {
+                    label: 'Essential Income Threshold',
+                    data: Array(percentile_data.years.length).fill(income_gap),
+                    borderColor: 'rgb(220, 53, 69)',  // Bootstrap danger red
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    pointStyle: false,
+                    fill: false,
+                    order: 0
+                },
+                // Then add the percentile lines
+                {
+                    label: 'Median (50th percentile)',
+                    data: percentile_data.withdrawal.p50.slice(1),
+                    borderColor: 'rgb(75, 192, 192)',
+                    borderWidth: 2,
+                    fill: false,
+                    order: 1
+                },
+                {
+                    label: '25th percentile',
+                    data: percentile_data.withdrawal.p25.slice(1),
+                    borderColor: 'rgba(75, 192, 192, 0.3)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                    borderWidth: 1,
+                    borderDash: [5, 5],
+                    fill: '+1',
+                    hidden: false,
+                    order: 1
+                },
+                {
+                    label: '75th percentile',
+                    data: percentile_data.withdrawal.p75.slice(1),
+                    borderColor: 'rgba(75, 192, 192, 0.3)',
+                    borderWidth: 1,
+                    borderDash: [5, 5],
+                    fill: false,
+                    hidden: false,
+                    order: 1
+                },
+                {
+                    label: '10th percentile',
+                    data: percentile_data.withdrawal.p10.slice(1),
+                    borderColor: 'rgba(75, 192, 192, 0.2)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.05)',
+                    borderWidth: 1,
+                    borderDash: [2, 2],
+                    fill: '+1',
+                    hidden: false,
+                    order: 1
+                },
+                {
+                    label: '90th percentile',
+                    data: percentile_data.withdrawal.p90.slice(1),
+                    borderColor: 'rgba(75, 192, 192, 0.2)',
+                    borderWidth: 1,
+                    borderDash: [2, 2],
+                    fill: false,
+                    hidden: false,
+                    order: 1
+                },
+                {
+                    label: '5th percentile',
+                    data: percentile_data.withdrawal.p5.slice(1),
+                    borderColor: 'rgba(75, 192, 192, 0.15)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.03)',
+                    borderWidth: 1,
+                    borderDash: [1, 1],
+                    fill: '+1',
+                    hidden: true,
+                    order: 1
+                },
+                {
+                    label: '95th percentile',
+                    data: percentile_data.withdrawal.p95.slice(1),
+                    borderColor: 'rgba(75, 192, 192, 0.15)',
+                    borderWidth: 1,
+                    borderDash: [1, 1],
+                    fill: false,
+                    hidden: true,
+                    order: 1
+                },
+                {
+                    label: '1st percentile',
+                    data: percentile_data.withdrawal.p1.slice(1),
+                    borderColor: 'rgba(75, 192, 192, 0.1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.02)',
+                    borderWidth: 1,
+                    borderDash: [1, 2],
+                    fill: '+1',
+                    hidden: true,
+                    order: 1
+                },
+                {
+                    label: '99th percentile',
+                    data: percentile_data.withdrawal.p99.slice(1),
+                    borderColor: 'rgba(75, 192, 192, 0.1)',
+                    borderWidth: 1,
+                    borderDash: [1, 2],
+                    fill: false,
+                    hidden: true,
+                    order: 1
+                }
+            ];
+            
+            // Create new chart
+            window.withdrawal_chart_instance = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: percentile_data.years.slice(1), // Skip the first year (no withdrawal yet)
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Annual Withdrawal Amounts',
+                            font: {
+                                size: 16
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += formatCurrency(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        intersect: true
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Year'
+                            }
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Annual Withdrawal ($)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return formatCurrency(value);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Update chart visibility based on current percentile selection
+            updatePercentileView();
+        }
+
+        // Function to update charts based on selected percentiles
+        function updatePercentileView() {
+            // Get the currently selected percentile range
+            const selectedRange = document.getElementById('percentile_selector').value;
+            
+            // Get current chart instances if they exist
+            const portfolioChart = window.portfolio_chart_instance;
+            const withdrawalChart = window.withdrawal_chart_instance;
+            
+            // Exit if charts don't exist yet (no simulation run)
+            if (!portfolioChart || !withdrawalChart) return;
+            
+            // Extract the percentile values from the selection
+            const [lowerPercentile, upperPercentile] = selectedRange.split('_').map(Number);
+            
+            // Update datasets visibility in portfolio chart
+            if (portfolioChart) {
+                // Always show median (50th percentile)
+                portfolioChart.data.datasets[0].hidden = false;
+                
+                // Show/hide 25-75 percentile bands
+                const show2575 = (lowerPercentile <= 25 && upperPercentile >= 75);
+                portfolioChart.data.datasets[1].hidden = !show2575; // 25th
+                portfolioChart.data.datasets[2].hidden = !show2575; // 75th
+                
+                // Show/hide 10-90 percentile bands
+                const show1090 = (lowerPercentile <= 10 && upperPercentile >= 90);
+                portfolioChart.data.datasets[3].hidden = !show1090; // 10th
+                portfolioChart.data.datasets[4].hidden = !show1090; // 90th
+                
+                // Show/hide 5-95 percentile bands
+                const show595 = (lowerPercentile <= 5 && upperPercentile >= 95);
+                if (portfolioChart.data.datasets.length > 5) {
+                    portfolioChart.data.datasets[5].hidden = !show595; // 5th
+                    portfolioChart.data.datasets[6].hidden = !show595; // 95th
+                    
+                    // Show/hide 1-99 percentile bands
+                    const show199 = (lowerPercentile <= 1 && upperPercentile >= 99);
+                    if (portfolioChart.data.datasets.length > 7) {
+                        portfolioChart.data.datasets[7].hidden = !show199; // 1st
+                        portfolioChart.data.datasets[8].hidden = !show199; // 99th
+                    }
+                }
+                
+                portfolioChart.update();
+            }
+            
+            // Do the same for withdrawal chart
+            if (withdrawalChart) {
+                // Always show threshold and median lines
+                withdrawalChart.data.datasets[0].hidden = false; // Success threshold
+                withdrawalChart.data.datasets[1].hidden = false; // Median
+                
+                // Show/hide 25-75 percentile bands
+                const show2575 = (lowerPercentile <= 25 && upperPercentile >= 75);
+                withdrawalChart.data.datasets[2].hidden = !show2575; // 25th
+                withdrawalChart.data.datasets[3].hidden = !show2575; // 75th
+                
+                // Show/hide 10-90 percentile bands
+                const show1090 = (lowerPercentile <= 10 && upperPercentile >= 90);
+                withdrawalChart.data.datasets[4].hidden = !show1090; // 10th
+                withdrawalChart.data.datasets[5].hidden = !show1090; // 90th
+                
+                // Show/hide 5-95 percentile bands
+                const show595 = (lowerPercentile <= 5 && upperPercentile >= 95);
+                if (withdrawalChart.data.datasets.length > 6) {
+                    withdrawalChart.data.datasets[6].hidden = !show595; // 5th
+                    withdrawalChart.data.datasets[7].hidden = !show595; // 95th
+                    
+                    // Show/hide 1-99 percentile bands
+                    const show199 = (lowerPercentile <= 1 && upperPercentile >= 99);
+                    if (withdrawalChart.data.datasets.length > 8) {
+                        withdrawalChart.data.datasets[8].hidden = !show199; // 1st
+                        withdrawalChart.data.datasets[9].hidden = !show199; // 99th
+                    }
+                }
+                
+                withdrawalChart.update();
+            }
+        }
+
+        // Event handlers
+        function runSimulations() {
+            // Get input values
+            const params = {
+                age: parseInt(document.getElementById('age').value),
+                life_expectancy: parseInt(document.getElementById('life_expectancy').value),
+                portfolio_value: parseFloat(document.getElementById('portfolio_value').value),
+                essential_income: parseFloat(document.getElementById('essential_income').value),
+                guaranteed_income: parseFloat(document.getElementById('guaranteed_income').value),
+                stock_allocation: parseFloat(document.getElementById('stock_allocation').value),
+                bond_allocation: 100 - parseFloat(document.getElementById('stock_allocation').value),
+                stock_return: parseFloat(document.getElementById('stock_return').value),
+                stock_volatility: parseFloat(document.getElementById('stock_volatility').value),
+                bond_return: parseFloat(document.getElementById('bond_return').value),
+                bond_volatility: parseFloat(document.getElementById('bond_volatility').value),
+                correlation: parseFloat(document.getElementById('correlation').value),
+                inflation: parseFloat(document.getElementById('inflation').value),
+                max_change: parseFloat(document.getElementById('max_change').value),
+                simulations: parseInt(document.getElementById('simulations').value)
+            };
+            
+            // Update bond allocation display
+            document.getElementById('bond_allocation').value = params.bond_allocation;
+            
+            // Show loading state
+            document.getElementById('run_simulation').textContent = 'Running...';
+            document.getElementById('run_simulation').disabled = true;
+            
+            // Use setTimeout to allow UI to update before running simulations
+            setTimeout(() => {
+                try {
+                    // Create strategy instance and run simulations
+                    const strategy = new MertonStrategy(params);
+                    const results = strategy.runAllSimulations();
+                    
+                    // Show results card
+                    document.getElementById('results_card').style.display = 'block';
+                    document.getElementById('sim_count').textContent = params.simulations;
+                    
+                    // Update results UI
+                    document.getElementById('initial_withdrawal').textContent = formatCurrency(results.initial_withdrawal);
+                    document.getElementById('initial_monthly').textContent = formatCurrency(results.initial_monthly);
+                    document.getElementById('initial_discretionary').textContent = formatCurrency(results.initial_discretionary);
+                    document.getElementById('essential_gap').textContent = formatCurrency(results.income_gap);
+                    document.getElementById('success_rate').textContent = formatPercentage(results.success_rate);
+                    document.getElementById('median_end').textContent = formatCurrency(results.median_end);
+                    document.getElementById('percentile_10').textContent = formatCurrency(results.percentile_10);
+                    document.getElementById('median_withdrawal_10').textContent = formatCurrency(results.median_withdrawal_10);
+                    document.getElementById('median_withdrawal_20').textContent = formatCurrency(results.median_withdrawal_20);
+                    
+                    // Update detailed table
+                    const detail_table_body = document.getElementById('detail_table_body');
+                    detail_table_body.innerHTML = '';
+                    
+                    for (const row of results.detail_table) {
+                        const tr = document.createElement('tr');
+                        
+                        // Year
+                        let td = document.createElement('td');
+                        td.textContent = row.year;
+                        tr.appendChild(td);
+                        
+                        // Age
+                        td = document.createElement('td');
+                        td.textContent = row.age;
+                        tr.appendChild(td);
+                        
+                        // Portfolio
+                        td = document.createElement('td');
+                        td.textContent = formatCurrency(row.portfolio);
+                        tr.appendChild(td);
+                        
+                        // Annual withdrawal
+                        td = document.createElement('td');
+                        td.textContent = formatCurrency(row.withdrawal);
+                        tr.appendChild(td);
+                        
+                        // Monthly withdrawal
+                        td = document.createElement('td');
+                        td.textContent = formatCurrency(row.monthly);
+                        tr.appendChild(td);
+                        
+                        // Essential coverage
+                        td = document.createElement('td');
+                        td.textContent = formatPercentage(row.coverage);
+                        tr.appendChild(td);
+                        
+                        detail_table_body.appendChild(tr);
+                    }
+                    
+                    // Update charts
+                    createPortfolioChart(results.percentile_data);
+                    createWithdrawalChart(results.percentile_data, results.income_gap);
+                    
+                } catch (error) {
+                    console.error('Simulation error:', error);
+                    alert('An error occurred while running the simulation: ' + error.message);
+                } finally {
+                    // Reset button state
+                    document.getElementById('run_simulation').textContent = 'Run Simulation';
+                    document.getElementById('run_simulation').disabled = false;
+                }
+            }, 100);
+        }
+
+        function switchTab(event) {
+            // Get the tab id from the data attribute
+            const tabId = event.currentTarget.getAttribute('data-tab');
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.nav-tabs li').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Add active class to clicked tab
+            event.currentTarget.classList.add('active');
+            
+            // Hide all tab panes
+            document.querySelectorAll('.tab-pane').forEach(pane => {
+                pane.classList.remove('active');
+            });
+            
+            // Show the selected tab pane
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        function updateBondAllocation() {
+            // Update bond allocation based on stock allocation
+            const stockValue = parseFloat(document.getElementById('stock_allocation').value);
+            document.getElementById('bond_allocation').value = (100 - stockValue).toFixed(1);
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up event listeners
+            document.getElementById('run_simulation').addEventListener('click', runSimulations);
+            document.getElementById('stock_allocation').addEventListener('input', updateBondAllocation);
+            document.getElementById('percentile_selector').addEventListener('change', updatePercentileView);
+            
+            // Set up tab switching
+            document.querySelectorAll('.nav-tabs li').forEach(tab => {
+                tab.addEventListener('click', switchTab);
+            });
+            
+            // Display the Javascript implementation
+            document.getElementById('code_display').textContent = 
+                document.getElementById('code_display').textContent.trim();
+        });
+    </script>
+</body>
+</html>
