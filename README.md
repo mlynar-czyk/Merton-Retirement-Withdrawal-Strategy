@@ -89,7 +89,7 @@ MIT License
 
 ## Acknowledgements
 
-Based on the portfolio theory work of Nobel laureate Robert C. Merton, particularly his contributions to continuous-time finance and lifecycle investing.
+Based on the portfolio theory work of Nobel laureate [Robert C. Merton](https://robertcmerton.com/), particularly his contributions to continuous-time finance and lifecycle investing.
 
 ## Disclaimer
 
